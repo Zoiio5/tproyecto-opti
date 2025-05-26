@@ -1,0 +1,20 @@
+int: nP = 3;                        % Número de plantas
+int: nT = 2;                        % Número de tanques
+int: nC1 = 2;                       % Número de nodos C1 (transbordo)
+int: nC2 = 2;                       % Número de nodos C2 (finales)
+int: nA = 5;                        % Número total de arcos
+
+array[1..nA] of int: arc_from = [1, 1, 2, 3, 4];  % Nodo origen de cada arco
+array[1..nA] of int: arc_to = [4, 5, 4, 6, 7];    % Nodo destino de cada arco
+
+array[1..7] of int: demand = [0, 0, 0, 50, 60, 70, 80];  % Demanda en cada nodo
+
+array[1..nA, 1..3] of int: install_cost = [
+    [20, 24, 32],  % Costo para arco 1
+    [20, 24, 32],  % Costo para arco 2
+    [50, 62, 78],  % Costo para arco 3
+    [50, 62, 78],  % Costo para arco 4
+    [20, 24, 32]   % Costo para arco 5
+];
+
+array[1..nA] of float: trans_cost = [8.0, 8.0, 8.0, 8.0, 8.0];  % Costo de transporte por arco
