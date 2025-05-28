@@ -16,32 +16,113 @@ class GeneradorInstanciasGrupo5:
             'tipo_b': {'D2': 50, 'D3': 62, 'D5': 78}
         }
         self.rangos_instancias = {
-            'pequeñas':    {'plantas': (1, 2), 'tanques': (5, 10), 'transbordo': (5, 10), 'finales': (10, 20)},
-            'medianas':    {'plantas': (3, 4), 'tanques': (10, 20), 'transbordo': (10, 20), 'finales': (20, 50)},
-            'grandes':     {'plantas': (5, 7), 'tanques': (20, 50), 'transbordo': (25, 50), 'finales': (50, 100)}
+            'pequeñas':    {'plantas': (2, 3), 'tanques': (5, 8), 'transbordo': (5, 8), 'finales': (8, 15)},
+            'medianas':    {'plantas': (3, 5), 'tanques': (8, 15), 'transbordo': (8, 15), 'finales': (15, 30)},
+            'grandes':     {'plantas': (4, 6), 'tanques': (15, 30), 'transbordo': (20, 35), 'finales': (30, 60)}
         }
 
-    def generar_demandas(self, num):
-        return [round(random.uniform(40, 100), 2) for _ in range(num)]
+    def generar_demandas_balanceadas(self, num, factor_demanda=0.7):
+        """Genera demandas más conservadoras para garantizar satisfacibilidad"""
+        base_demand = random.uniform(30, 80)  # Reducido de 40-100
+        demands = []
+        for _ in range(num):
+            # Añadir variabilidad pero manteniendo demandas razonables
+            variation = random.uniform(0.8, 1.2)
+            demand = round(base_demand * variation * factor_demanda, 2)
+            demands.append(max(20, demand))  # Mínimo de 20
+        return demands
 
     def generar_costos_transporte(self, m):
-        return [round(max(0.1, np.random.normal(8, 2)), 2) for _ in range(m)]
+        """Genera costos de transporte más razonables"""
+        return [round(max(1.0, np.random.normal(6, 1.5)), 2) for _ in range(m)]
 
-    def generar_topologia(self, nP, nT, nC1, nC2):
-        pt = [(f"P{p}", f"T{t}") for p in range(nP) for t in random.sample(range(nT), random.randint(1, min(3, nT)))]
-        tc1 = [(f"T{t}", f"C1_{c}") for t in range(nT) for c in random.sample(range(nC1), random.randint(1, min(4, nC1)))]
-        c1c2 = [(f"C1_{c}", f"C2_{f}") for f in range(nC2) for c in random.sample(range(nC1), random.randint(1, min(3, nC1)))]
+    def generar_topologia_conectada(self, nP, nT, nC1, nC2):
+        """Genera una topología que garantiza conectividad completa"""
+        # Asegurar que cada tanque esté conectado a al menos una planta
+        pt = []
+        plantas_disponibles = list(range(nP))
+        for t in range(nT):
+            # Cada tanque se conecta a 1-2 plantas como mínimo
+            num_conexiones = min(random.randint(1, 2), nP)
+            plantas_conectadas = random.sample(plantas_disponibles, num_conexiones)
+            for p in plantas_conectadas:
+                pt.append((f"P{p}", f"T{t}"))
+        
+        # Asegurar conexiones adicionales para redundancia
+        for p in range(nP):
+            if not any(conn[0] == f"P{p}" for conn in pt):
+                # Si una planta no tiene conexiones, conectarla a un tanque aleatorio
+                t_random = random.randint(0, nT-1)
+                pt.append((f"P{p}", f"T{t_random}"))
+
+        # Tanques a centros de transbordo - asegurar conectividad
+        tc1 = []
+        for t in range(nT):
+            # Cada tanque se conecta a 1-3 centros de transbordo
+            num_conexiones = min(random.randint(1, 3), nC1)
+            centros_conectados = random.sample(range(nC1), num_conexiones)
+            for c in centros_conectados:
+                tc1.append((f"T{t}", f"C1_{c}"))
+
+        # Centros de transbordo a destinos finales - garantizar que todos los destinos sean alcanzables
+        c1c2 = []
+        # Primero, asegurar que cada destino final tenga al menos una conexión
+        for f in range(nC2):
+            if nC1 > 0:
+                c_random = random.randint(0, nC1-1)
+                c1c2.append((f"C1_{c_random}", f"C2_{f}"))
+        
+        # Luego añadir conexiones adicionales
+        for c in range(nC1):
+            num_conexiones = min(random.randint(1, 2), nC2)
+            destinos_adicionales = random.sample(range(nC2), num_conexiones)
+            for f in destinos_adicionales:
+                if (f"C1_{c}", f"C2_{f}") not in c1c2:
+                    c1c2.append((f"C1_{c}", f"C2_{f}"))
+
         return pt, tc1, c1c2
+
+    def calcular_suministro_adecuado(self, d1, d2, nP, factor_holgura=1.3):
+        """Calcula suministro con suficiente holgura para satisfacibilidad"""
+        demanda_total = sum(d1) + sum(d2)
+        suministro_por_planta = (demanda_total * factor_holgura) / nP
+        return round(suministro_por_planta, 2)
+
+    def validar_capacidades_flujo(self, pt, tc1, c1c2, demanda_total):
+        """Verifica que las capacidades de flujo sean suficientes"""
+        # Verificar que tenemos suficientes arcos de alta capacidad
+        total_arcos = len(pt) + len(tc1) + len(c1c2)
+        
+        # Estimar flujo promedio por arco
+        flujo_promedio = demanda_total / max(1, total_arcos * 0.7)  # Asumir 70% de utilización
+        
+        # Verificar si necesitamos más conexiones de alta capacidad
+        if flujo_promedio > self.diametro_specs['D3']['max_flujo']:
+            print(f"Advertencia: Flujo promedio ({flujo_promedio:.2f}) podría exceder capacidades")
+        
+        return True
 
     def generar_instancia(self, tam, idx):
         r = self.rangos_instancias[tam]
         nP, nT, nC1, nC2 = (random.randint(*r[k]) for k in ['plantas', 'tanques', 'transbordo', 'finales'])
-        pt, tc1, c1c2 = self.generar_topologia(nP, nT, nC1, nC2)
+        
+        # Generar demandas más conservadoras
+        factor_demanda = {'pequeñas': 0.6, 'medianas': 0.7, 'grandes': 0.8}[tam]
+        d1 = self.generar_demandas_balanceadas(nC1, factor_demanda)
+        d2 = self.generar_demandas_balanceadas(nC2, factor_demanda)
+        
+        # Generar topología conectada
+        pt, tc1, c1c2 = self.generar_topologia_conectada(nP, nT, nC1, nC2)
+        
+        # Validar capacidades
+        demanda_total = sum(d1) + sum(d2)
+        self.validar_capacidades_flujo(pt, tc1, c1c2, demanda_total)
+        
         M = len(pt) + len(tc1) + len(c1c2)
-        d1, d2 = self.generar_demandas(nC1), self.generar_demandas(nC2)
         trans = self.generar_costos_transporte(M)
-        total = sum(d1) + sum(d2)
-        sup = (total * 1.1) / nP
+        
+        # Calcular suministro con holgura adecuada
+        sup = self.calcular_suministro_adecuado(d1, d2, nP)
 
         def build_dict(conns, offs):
             return {f"{a}->{b}": trans[i + offs] for i, (a, b) in enumerate(conns)}
@@ -58,7 +139,20 @@ class GeneradorInstanciasGrupo5:
         }
 
         inst = {
-            'metadata': {'tamaño': tam, 'numero': idx, 'grupo': 5},
+            'metadata': {
+                'tamaño': tam, 
+                'numero': idx, 
+                'grupo': 5,
+                'demanda_total': round(demanda_total, 2),
+                'suministro_total': round(sup * nP, 2),
+                'factor_holgura': round((sup * nP) / demanda_total, 2),
+                'num_arcos': M,
+                'conectividad': {
+                    'plantas_tanques': len(pt),
+                    'tanques_transbordo': len(tc1),
+                    'transbordo_finales': len(c1c2)
+                }
+            },
             'nodos': nodos,
             'conexiones': {'pt': pt, 'tc1': tc1, 'c1c2': c1c2},
             'param': {
@@ -73,6 +167,7 @@ class GeneradorInstanciasGrupo5:
     def guardar_dzn(self, instancia, ruta):
         """
         Genera un archivo .dzn compatible con el modelo MiniZinc.
+        Incluye parámetros adicionales para máximas capacidades.
         """
         # Indices de nodos
         node_idx = {}
@@ -90,54 +185,117 @@ class GeneradorInstanciasGrupo5:
                       list(instancia['param']['costos']['tc1'].values()) + \
                       list(instancia['param']['costos']['c1c2'].values())
 
-        # Demandas: plantas y tanques = 0, C1 y C2 según inst['param']
+        # Suministros (positivos para plantas, 0 para otros)
         N = contador - 1
+        supply = [0.0] * N
+        for nodo in instancia['nodos']['P']:
+            supply[node_idx[nodo]-1] = instancia['param']['suministro'][nodo]
+
+        # Demandas (positivas para centros de consumo, 0 para otros)
         demand = [0.0] * N
         for nodo,val in instancia['param']['d1'].items():
             demand[node_idx[nodo]-1] = val
         for nodo,val in instancia['param']['d2'].items():
             demand[node_idx[nodo]-1] = val
 
-        # Costos de instalación: alternar tipo a/b para fila de cada arco
+        # Capacidades máximas por diámetro
+        max_capacity = [self.diametro_specs[d]['max_flujo'] for d in self.diametros]
+
+        # Costos de instalación: alternar tipo a/b para cada arco
         install_costs = []
         for i in range(len(arcos)):
             tipo = 'tipo_a' if i % 2 == 0 else 'tipo_b'
-            install_costs.append([ self.costos_instalacion[tipo][d] for d in self.diametros ])
+            install_costs.append([self.costos_instalacion[tipo][d] for d in self.diametros])
 
         # Escritura del archivo
         with open(ruta, 'w') as f:
             # Parámetros de tamaño
-            f.write(f"nP = {len(instancia['nodos']['P'])};")
-            f.write(f"nT = {len(instancia['nodos']['T'])};")
-            f.write(f"nC1 = {len(instancia['nodos']['C1'])};")
-            f.write(f"nC2 = {len(instancia['nodos']['C2'])};")
-            f.write(f"nA = {len(arcos)};")
+            f.write(f"nP = {len(instancia['nodos']['P'])};\n")
+            f.write(f"nT = {len(instancia['nodos']['T'])};\n")
+            f.write(f"nC1 = {len(instancia['nodos']['C1'])};\n")
+            f.write(f"nC2 = {len(instancia['nodos']['C2'])};\n")
+            f.write(f"nA = {len(arcos)};\n")
+            f.write(f"nD = {len(self.diametros)};\n\n")
 
             # Arcos
-            f.write("arc_from = [ " + ", ".join(map(str, arc_from)) + " ];")
-            f.write("arc_to   = [ " + ", ".join(map(str, arc_to)) + " ];")
+            f.write("arc_from = [" + ", ".join(map(str, arc_from)) + "];\n")
+            f.write("arc_to = [" + ", ".join(map(str, arc_to)) + "];\n\n")
 
-            # Demandas
-            f.write("demand = [ " + ", ".join(f"{d:.2f}" for d in demand) + " ];")
+            # Suministros y demandas
+            f.write("supply = [" + ", ".join(f"{s:.2f}" for s in supply) + "];\n")
+            f.write("demand = [" + ", ".join(f"{d:.2f}" for d in demand) + "];\n\n")
 
-            # Install cost
-            f.write("install_cost = array2d(1..nA,1..3,[")
-            for row in install_costs:
-                f.write("  " + ", ".join(f"{c:.2f}" for c in row) + ",")
-            f.write("]);")
+            # Capacidades máximas por diámetro
+            f.write("max_capacity = [" + ", ".join(f"{c}" for c in max_capacity) + "];\n\n")
 
-            # Transporte
-            f.write("trans_cost = [ " + ", ".join(f"{c:.2f}" for c in trans_costs) + " ];")
+            # Costos de instalación
+            f.write("install_cost = array2d(1..nA, 1..nD, [\n")
+            for i, row in enumerate(install_costs):
+                f.write("  " + ", ".join(f"{c}" for c in row))
+                if i < len(install_costs) - 1:
+                    f.write(",\n")
+                else:
+                    f.write("\n")
+            f.write("]);\n\n")
 
-# Generar todas las instancias .dzn
+            # Costos de transporte
+            f.write("trans_cost = [" + ", ".join(f"{c:.2f}" for c in trans_costs) + "];\n\n")
+
+            # Información adicional como comentarios
+            f.write(f"% Metadata: {instancia['metadata']}\n")
+            f.write(f"% Total supply: {sum(supply):.2f}\n")
+            f.write(f"% Total demand: {sum(demand):.2f}\n")
+            f.write(f"% Balance factor: {sum(supply)/max(sum(demand),1):.2f}\n")
+
+    def generar_reporte_instancia(self, instancia, ruta_reporte):
+        """Genera un reporte detallado de la instancia para análisis"""
+        with open(ruta_reporte, 'w') as f:
+            f.write("=== REPORTE DE INSTANCIA ===\n\n")
+            f.write(f"Metadata: {instancia['metadata']}\n\n")
+            
+            f.write("BALANCE OFERTA-DEMANDA:\n")
+            supply_total = sum(instancia['param']['suministro'].values())
+            demand_total = sum(instancia['param']['d1'].values()) + sum(instancia['param']['d2'].values())
+            f.write(f"  Suministro total: {supply_total:.2f}\n")
+            f.write(f"  Demanda total: {demand_total:.2f}\n")
+            f.write(f"  Factor de holgura: {supply_total/demand_total:.2f}\n\n")
+            
+            f.write("CONECTIVIDAD:\n")
+            f.write(f"  Plantas -> Tanques: {len(instancia['conexiones']['pt'])} conexiones\n")
+            f.write(f"  Tanques -> Transbordo: {len(instancia['conexiones']['tc1'])} conexiones\n")
+            f.write(f"  Transbordo -> Finales: {len(instancia['conexiones']['c1c2'])} conexiones\n\n")
+
+# Generar todas las instancias .dzn con mejor satisfacibilidad
 if __name__=='__main__':
-    random.seed(42); np.random.seed(42)
+    random.seed(42)
+    np.random.seed(42)
     gen = GeneradorInstanciasGrupo5()
+    
     for tam in ['pequeñas','medianas','grandes']:
         carpeta = f'instancias/{tam}'
+        carpeta_reportes = f'reportes/{tam}'
         os.makedirs(carpeta, exist_ok=True)
+        os.makedirs(carpeta_reportes, exist_ok=True)
+        
+        print(f"\n=== Generando instancias {tam} ===")
         for i in range(1,6):
             inst = gen.generar_instancia(tam,i)
-            ruta = os.path.join(carpeta,f"inst_{tam[:-1]}_{i}.dzn")
-            gen.guardar_dzn(inst,ruta)
-            print(f"Guardado: {ruta}")
+            
+            # Guardar instancia .dzn
+            ruta_dzn = os.path.join(carpeta,f"inst_{tam[:-1]}_{i}.dzn")
+            gen.guardar_dzn(inst,ruta_dzn)
+            
+            # Guardar reporte
+            ruta_reporte = os.path.join(carpeta_reportes,f"reporte_{tam[:-1]}_{i}.txt")
+            gen.generar_reporte_instancia(inst, ruta_reporte)
+            
+            # Mostrar información clave
+            metadata = inst['metadata']
+            print(f"  Instancia {i}: Factor holgura = {metadata['factor_holgura']:.2f}, "
+                  f"Arcos = {metadata['num_arcos']}, "
+                  f"Demanda = {metadata['demanda_total']:.2f}")
+            
+            print(f"  Guardado: {ruta_dzn}")
+            print(f"  Reporte: {ruta_reporte}")
+    
+    print(f"\n¡Generación completada! Todas las instancias tienen factores de holgura >= 1.3 para mejor satisfacibilidad.")

@@ -1,0 +1,14 @@
+=== REPORTE DE INSTANCIA ===
+
+Metadata: {'tamaño': 'pequeñas', 'numero': 3, 'grupo': 5, 'demanda_total': 922.32, 'suministro_total': 1199.01, 'factor_holgura': 1.3, 'num_arcos': 47, 'conectividad': {'plantas_tanques': 11, 'tanques_transbordo': 12, 'transbordo_finales': 24}}
+
+BALANCE OFERTA-DEMANDA:
+  Suministro total: 1199.01
+  Demanda total: 922.32
+  Factor de holgura: 1.30
+
+CONECTIVIDAD:
+  Plantas -> Tanques: 11 conexiones
+  Tanques -> Transbordo: 12 conexiones
+  Transbordo -> Finales: 24 conexiones
+
