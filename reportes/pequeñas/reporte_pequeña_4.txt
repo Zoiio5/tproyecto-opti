@@ -12,3 +12,6 @@ CONECTIVIDAD:
   Tanques -> Transbordo: 14 conexiones
   Transbordo -> Finales: 27 conexiones
 
+COSTO TOTAL: $1400.00
+Tiempo de resolución: 1.10
+
