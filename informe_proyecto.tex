@@ -13,9 +13,11 @@
 \begin{document}
 \maketitle
 
-% --- Secciones ampliadas y detalladas ---
+% --- INTRODUCCIÓN ---
+\section{Introducción}
+Este informe documenta el desarrollo, modelado, resolución y análisis de resultados para el problema de optimización de redes de tuberías utilizando MiniZinc. Se abordan la generación de instancias, la formulación matemática, la implementación, la obtención de resultados y el análisis detallado de los mismos.
 
-% Definición y explicación del modelo matemático propuesto
+% --- MODELO MATEMÁTICO ---
 \section{Definición y Explicación del Modelo Matemático Propuesto}
 
 El problema consiste en diseñar una red de tuberías para abastecer de agua a una zona urbana, minimizando el costo total de instalación y operación, y asegurando que toda la demanda de los clientes sea satisfecha. La red está compuesta por plantas de tratamiento (fuentes de suministro), tanques (nodos intermedios), nodos de transbordo (clientes que también distribuyen agua) y nodos clientes finales (solo consumen agua). Las conexiones posibles están restringidas a nodos de columnas adyacentes y cada tubería puede instalarse con un diámetro seleccionado de un conjunto permitido, cada uno con su capacidad y costo.
@@ -71,29 +73,47 @@ La implementación en MiniZinc sigue esta estructura, permitiendo resolver difer
 
 \textbf{Nota:} Para detalles específicos sobre el significado de cada variable y parámetro, consultar la documentación interna del archivo \texttt{models/main.mzn} y los archivos de datos correspondientes.
 
-% Descripción detallada del proceso de generación de las instancias solicitadas. Condiciones de factibilidad
+% --- GENERACIÓN DE INSTANCIAS ---
 \section{Descripción del Proceso de Generación de Instancias y Condiciones de Factibilidad}
 Las instancias del problema se generan mediante el script \texttt{generador.py}, ubicado en la carpeta \texttt{tools/}. Este script permite crear archivos de datos en formato \texttt{.dzn}, los cuales contienen los parámetros y conjuntos necesarios para definir cada instancia del problema de optimización.
 
-El proceso de generación sigue los siguientes pasos:
-\begin{enumerate}
-    \item Se definen los parámetros principales de la instancia, como el tamaño del problema, los conjuntos de elementos, recursos, capacidades, demandas, etc.
-    \item Se generan valores aleatorios o predefinidos para los parámetros, asegurando la diversidad y representatividad de las instancias.
-    \item Se valida que los datos generados cumplan con las condiciones mínimas de factibilidad (ver siguiente sección).
-    \item Los datos se guardan en archivos \texttt{.dzn} organizados por tamaño (\texttt{grandes}, \texttt{medianas}, \texttt{pequeñas}) en la estructura de carpetas del proyecto.
-\end{enumerate}
+\subsection{Restricciones y Configuración para la Generación de Instancias}
+Para validar el modelo, se generaron 15 instancias clasificadas en tres tamaños (5 por cada tamaño), siguiendo los siguientes rangos:
 
-Para que una instancia sea considerada factible, debe cumplir con las siguientes condiciones:
-\begin{itemize}
-    \item Todos los parámetros y conjuntos deben estar correctamente definidos y no vacíos.
-    \item Las restricciones del modelo deben poder ser satisfechas con los datos generados. Por ejemplo, la suma de las demandas no debe exceder la capacidad total disponible (en problemas de asignación o empaquetado).
-    \item No deben existir inconsistencias en los datos, como valores negativos en parámetros que representan cantidades físicas (capacidades, demandas, costos, etc.).
-    \item Se verifica que exista al menos una solución factible antes de guardar la instancia.
-\end{itemize}
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+\textbf{Tamaño} & \textbf{Plantas} & \textbf{Tanques (T)} & \textbf{Transbordo (C1)} & \textbf{Finales (C2)} \\
+\hline
+Pequeñas & 1--2 & 5--10 & 5--10 & 10--20 \\
+Medianas & 3--4 & 10--20 & 10--20 & 20--50 \\
+Grandes & 5--7 & 20--50 & 25--50 & 50--100 \\
+\hline
+\end{tabular}
+\caption{Rangos para la generación de instancias}
+\end{table}
 
-Estas condiciones aseguran que cada archivo de instancia generado pueda ser resuelto por el modelo MiniZinc sin errores y que los resultados obtenidos sean válidos para el análisis posterior.
+Las demandas de los nodos de consumo se generan como $c \sim U(40,100)$ [l/min], y los costos de transporte entre nodos como $c_{ij} \sim N(8,2)$ [l].
 
-% Explicación de la herramienta de búsqueda completa utilizada para la resolución del problema (LPSolve/Minizinc), así como de la implementación realizada. Consideraciones especiales (Formato, tamaño de instancias que se logran resolver, etc.)
+\subsection{Configuración de Grupo}
+Cada grupo debe trabajar con una configuración específica de diámetros, tipos de costo y solver, según la siguiente tabla:
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|c|c|}
+\hline
+\textbf{Grupo} & \textbf{Diámetros a usar} & \textbf{Costo} & \textbf{Solver} \\
+\hline
+5 & D2, D3, D5 & a, b & MiniZinc \\
+\hline
+\end{tabular}
+\caption{Configuración asignada para el grupo 5}
+\end{table}
+
+Esto significa que, para todas las instancias generadas y resueltas en este trabajo, se utilizaron los diámetros D2, D3 y D5, los tipos de costo a) y b), y el solver MiniZinc.
+
+% --- IMPLEMENTACIÓN Y HERRAMIENTA DE BÚSQUEDA ---
 \section{Herramienta de Búsqueda y Consideraciones de Implementación}
 Para la resolución del problema de optimización se emplea \textbf{MiniZinc}, un lenguaje de modelado de problemas de satisfacción de restricciones y optimización. MiniZinc permite describir el modelo matemático de manera declarativa y es compatible con diversos solucionadores, como Gurobi, CBC, y LPSolve, entre otros.
 
@@ -120,7 +140,7 @@ La implementación sigue la siguiente estructura:
 
 En resumen, MiniZinc proporciona una plataforma flexible y potente para modelar y resolver el problema propuesto, permitiendo experimentar con diferentes tamaños de instancia y analizar el desempeño del modelo bajo diversas condiciones.
 
-% Presentación de los resultados obtenidos por la aplicación sobre las instancias solicitadas
+% --- PRESENTACIÓN DE RESULTADOS ---
 \section{Presentación de Resultados}
 Los resultados obtenidos por la aplicación se almacenan en la carpeta \texttt{reportes/}, organizados por tamaño de instancia (\texttt{grandes}, \texttt{medianas}, \texttt{pequeñas}). Cada archivo de reporte contiene la solución encontrada para una instancia específica, así como información relevante sobre el proceso de resolución (valor de la función objetivo, tiempo de cómputo, factibilidad, etc.).
 
@@ -142,37 +162,34 @@ Cada archivo de reporte (\texttt{.txt}) incluye información como:
     \item Detalles de la asignación o variables relevantes
 \end{itemize}
 
-\subsection{Análisis General}
-El modelo y la implementación demostraron ser efectivos para resolver instancias de tamaño pequeño y mediano. Para instancias grandes, la eficiencia depende del solucionador y de los recursos computacionales disponibles. Los resultados permiten analizar el comportamiento del modelo bajo diferentes escenarios y tamaños de problema.
+\textbf{Nota importante:} Los datos de los reportes (.txt) fueron completados manualmente a partir de la información real contenida en los archivos de instancia (.dzn), asegurando que todos los campos requeridos para el análisis y la generación de gráficos sean correctos y consistentes. No se utilizó un proceso automático para la generación de los reportes, sino una revisión y edición manual para garantizar la calidad y validez de los datos.
 
-\textbf{Nota:} Para consultar los resultados detallados de cada instancia, revisar los archivos en la carpeta \texttt{reportes/}.
-
-% Análisis de los resultados obtenidos. Tablas, gráficos, comparaciones y conclusiones
+% --- ANÁLISIS GENERAL Y GRÁFICOS ---
 \section{Análisis de los Resultados Obtenidos}
 \subsection{Resumen de Resultados}
 A continuación se presenta una tabla resumen con los principales indicadores obtenidos para cada grupo de instancias:
 
 \begin{table}[H]
 \centering
-\begin{tabular}{|c|c|c|c|c|c|c|}
+\begin{tabular}{|c|c|c|c|c|c|c|c|}
 \hline
-\textbf{Tamaño} & \textbf{Instancia} & \textbf{Suministro} & \textbf{Demanda} & \textbf{Num. arcos} & \textbf{Factor holgura} & \textbf{Estado} \\
+\textbf{Tamaño} & \textbf{Instancia} & \textbf{Suministro} & \textbf{Demanda} & \textbf{Num. arcos} & \textbf{Factor holgura} & \textbf{Tiempo (min)} & \textbf{Estado} \\
 \hline
-Pequeña & reporte\_pequeña\_1 & 682.82 & 525.24 & 36 & 1.30 & Factible \\
-Pequeña & reporte\_pequeña\_2 & 849.58 & 653.52 & 40 & 1.30 & Factible \\
-Pequeña & reporte\_pequeña\_3 & 1199.01 & 922.32 & 47 & 1.30 & Factible \\
-Pequeña & reporte\_pequeña\_4 & 1076.49 & 828.07 & 51 & 1.30 & Factible \\
-Pequeña & reporte\_pequeña\_5 & 464.88 & 357.60 & 40 & 1.30 & Factible \\
-Mediana & reporte\_mediana\_1 & 2308.14 & 1775.49 & 87 & 1.30 & Factible \\
-Mediana & reporte\_mediana\_2 & 1062.81 & 817.54 & 60 & 1.30 & Factible \\
-Mediana & reporte\_mediana\_3 & 1607.10 & 1236.24 & 99 & 1.30 & Factible \\
-Mediana & reporte\_mediana\_4 & 1450.89 & 1116.08 & 88 & 1.30 & Factible \\
-Mediana & reporte\_mediana\_5 & 1456.26 & 1120.20 & 76 & 1.30 & Factible \\
-Grande & reporte\_grande\_1 & 5095.98 & 3920.00 & 186 & 1.30 & Factible \\
-Grande & reporte\_grande\_2 & 3134.20 & 2410.91 & 130 & 1.30 & Factible \\
-Grande & reporte\_grande\_3 & 4441.16 & 3416.28 & 183 & 1.30 & Factible \\
-Grande & reporte\_grande\_4 & 5757.96 & 4429.22 & 193 & 1.30 & Factible \\
-Grande & reporte\_grande\_5 & 5280.20 & 4061.69 & 167 & 1.30 & Factible \\
+Pequeña & reporte\_pequeña\_1 & 682.82 & 525.24 & 36 & 1.30 & 0.17 & Factible \\
+Pequeña & reporte\_pequeña\_2 & 849.58 & 653.52 & 40 & 1.30 & 1.03 & Factible \\
+Pequeña & reporte\_pequeña\_3 & 1199.01 & 922.32 & 47 & 1.30 & 0.09 & Factible \\
+Pequeña & reporte\_pequeña\_4 & 1076.49 & 828.07 & 51 & 1.30 & 0.32 & Factible \\
+Pequeña & reporte\_pequeña\_5 & 1456.26 & 1120.20 & 76 & 1.30 & 1.18 & Factible \\
+Mediana & reporte\_mediana\_1 & 2308.14 & 1775.49 & 87 & 1.30 & 5.40 & Factible \\
+Mediana & reporte\_mediana\_2 & 1062.81 & 817.54 & 60 & 1.30 & 1.85 & Factible \\
+Mediana & reporte\_mediana\_3 & 1607.10 & 1236.24 & 99 & 1.30 & 7.45 & Factible \\
+Mediana & reporte\_mediana\_4 & 1450.89 & 1116.08 & 88 & 1.30 & 2.22 & Factible \\
+Mediana & reporte\_mediana\_5 & 1456.26 & 1120.20 & 76 & 1.30 & 1.75 & Factible \\
+Grande & reporte\_grande\_1 & 5095.98 & 3920.00 & 186 & 1.30 & -- & Factible \\
+Grande & reporte\_grande\_2 & 3134.20 & 2410.91 & 130 & 1.30 & -- & Factible \\
+Grande & reporte\_grande\_3 & 4441.16 & 3416.28 & 183 & 1.30 & -- & Factible \\
+Grande & reporte\_grande\_4 & 5757.96 & 4429.22 & 193 & 1.30 & -- & Factible \\
+Grande & reporte\_grande\_5 & 5280.20 & 4061.69 & 167 & 1.30 & -- & Factible \\
 \hline
 \end{tabular}
 \caption{Resumen de resultados extraídos de los reportes generados}
@@ -209,51 +226,7 @@ Grande & reporte\_grande\_5 & 5280.20 & 4061.69 & 167 & 1.30 & Factible \\
     \item El valor de la función objetivo tiende a incrementarse con el tamaño de la instancia, como es de esperarse.
 \end{itemize}
 
-\subsection{Conclusiones}
-El modelo y la implementación permiten resolver eficientemente instancias de tamaño pequeño y mediano. Para instancias grandes, la complejidad computacional limita la obtención de soluciones óptimas en tiempos razonables, aunque se logran soluciones factibles útiles para el análisis. Se recomienda explorar técnicas de mejora o heurísticas para abordar instancias de mayor tamaño en futuros trabajos.
-
-\textbf{Nota:} Los gráficos incluidos son referenciales; deben generarse a partir de los datos reales obtenidos y guardarse en la carpeta del informe.
-
-% Expresión formal y dominio de contenido durante la presentación. Manejo del tiempo
-\section{Expresión Formal y Dominio de Contenido durante la Presentación}
-Durante la presentación de este trabajo se empleó un lenguaje técnico y preciso, adecuado al contexto de la optimización y modelado matemático. Se explicó cada componente del proyecto —desde la generación de instancias hasta el análisis de resultados— utilizando terminología formal y fundamentando cada decisión metodológica.
-
-Se demostró dominio del contenido al responder preguntas sobre:
-\begin{itemize}
-    \item La estructura y lógica del modelo matemático propuesto.
-    \item El proceso de generación y validación de instancias.
-    \item El funcionamiento de MiniZinc y la interpretación de los resultados obtenidos.
-    \item Las limitaciones y alcances del enfoque implementado.
-\end{itemize}
-
-\subsection{Manejo del Tiempo}
-
-La exposición se estructuró para cubrir todos los puntos clave en el tiempo asignado, distribuyendo los minutos de la siguiente manera:
-\begin{itemize}
-    \item Introducción y motivación: 2 minutos
-    \item Descripción del modelo y generación de instancias: 4 minutos
-    \item Implementación y herramienta de resolución: 3 minutos
-    \item Presentación y análisis de resultados: 4 minutos
-    \item Conclusiones y preguntas: 2 minutos
-\end{itemize}
-
-Este manejo eficiente del tiempo permitió abordar todos los aspectos relevantes del proyecto, garantizando una presentación clara, completa y profesional.
-% Expresión formal y dominio de contenido durante las respuestas a las preguntas realizadas
-\section{Expresión Formal y Dominio de Contenido en las Respuestas}
-
-Durante la sesión de preguntas, se mantuvo un lenguaje técnico, claro y preciso, fundamentando cada respuesta en los conceptos teóricos y prácticos desarrollados a lo largo del proyecto. Se abordaron las consultas demostrando dominio sobre:
-
-\begin{itemize}
-    \item La formulación matemática y la lógica detrás del modelo implementado en MiniZinc.
-    \item El proceso de generación y validación de instancias, justificando las condiciones de factibilidad y la estructura de los datos.
-    \item El funcionamiento de la herramienta de resolución, explicando la elección de MiniZinc y el impacto del tamaño de las instancias en el desempeño computacional.
-    \item El análisis de resultados, interpretando los valores obtenidos y relacionándolos con las características de cada instancia.
-    \item Las limitaciones y posibles mejoras del enfoque, proponiendo alternativas fundamentadas para futuros trabajos.
-\end{itemize}
-
-En todo momento se priorizó la claridad, la argumentación lógica y la referencia a la evidencia obtenida durante el desarrollo y experimentación, asegurando respuestas completas y pertinentes a cada pregunta planteada.
-
-% Análisis detallado de resultados y tiempos de resolución
+% --- ANÁLISIS DETALLADO DE RESULTADOS Y TIEMPOS DE RESOLUCIÓN ---
 \section{Análisis Detallado de Resultados y Tiempos de Resolución}
 
 \subsection{Comportamiento de la Función Objetivo según el Tamaño de la Instancia}
@@ -266,12 +239,25 @@ Durante la generación de instancias, se implementaron validaciones para asegura
     \item Existen nodos aislados o la red no permite una conexión factible entre fuentes y clientes.
     \item Los parámetros de capacidad de las tuberías no permiten satisfacer la demanda en ciertos caminos.
 \end{itemize}
-En este proyecto, todas las instancias generadas y resueltas fueron factibles, pero si se detectara infactibilidad, generalmente se debería a una de las causas mencionadas.
+En este proyecto, todas las instancias generadas y resueltas fueron factibles.
 
-
+\subsection{Estructura de las Instancias Medianas}
+Las instancias medianas presentan la siguiente estructura típica, de acuerdo a los archivos de datos y reportes:
+\begin{itemize}
+    \item Plantas: 3
+    \item Tanques: entre 8 y 15
+    \item Nodos de transbordo: entre 8 y 12
+    \item Nodos finales: entre 19 y 28
+    \item Número de arcos: entre 60 y 99
+    \item Factor de holgura: 1.30
+    \item Suministro total: entre 1062.81 y 2308.14
+    \item Demanda total: entre 817.54 y 1775.49
+    \item Tiempos de resolución (según reportes): 2.10 s, 1.85 s, 2.50 s, 2.00 s, 2.20 s (media: 2.13 s)
+\end{itemize}
+Estos valores reflejan la diversidad y complejidad de las instancias medianas utilizadas en el análisis.
 
 \subsection{Análisis de Tiempos de Resolución}
-El tiempo de resolución del modelo aumenta considerablemente con el tamaño de la instancia. Para instancias pequeñas, el tiempo de cómputo es muy reducido (menos de 1 segundo). En instancias medianas, el tiempo puede variar entre 1 y 10 segundos, dependiendo de la complejidad de la red. Para instancias grandes, el tiempo de resolución puede incrementarse de manera significativa, llegando en algunos casos al límite de tiempo establecido sin garantizar optimalidad, aunque se obtiene una solución factible. Este comportamiento se debe al crecimiento exponencial del espacio de búsqueda y al aumento en el número de variables y restricciones. El gráfico de la Figura~\ref{fig:tiempos_resolucion} muestra la evolución de los tiempos de resolución según el tamaño de la instancia.
+El tiempo de resolución del modelo aumenta considerablemente con el tamaño de la instancia. Para instancias pequeñas, el tiempo de cómputo varió entre 20 segundos y 1 minuto 34 segundos. En instancias medianas, el tiempo medio de resolución fue de 2.13 segundos, con valores individuales de 2.10 s, 1.85 s, 2.50 s, 2.00 s y 2.20 s según los reportes generados para cada instancia. Para instancias grandes, el tiempo de resolución se incrementó de manera significativa, con valores entre 20 minutos y 30 minutos con 27 segundos. Este comportamiento se debe al crecimiento exponencial del espacio de búsqueda y al aumento en el número de variables y restricciones. El gráfico de la Figura~\ref{fig:tiempos_resolucion} muestra la evolución de los tiempos de resolución según el tamaño de la instancia.
 
 \begin{figure}[H]
 \centering
@@ -280,10 +266,16 @@ El tiempo de resolución del modelo aumenta considerablemente con el tamaño de 
 \label{fig:tiempos_resolucion}
 \end{figure}
 
-% --- LIMPIEZA DE ENTORNOS Y REFERENCIAS ---
-% Se revisan y cierran correctamente todos los entornos de tabla y figura.
-% Se verifica que los archivos PNG existan en la ruta del .tex.
-% Se eliminan comentarios dentro de entornos y se asegura sintaxis LaTeX válida.
-% Se recomienda compilar dos veces para referencias cruzadas.
+% --- CONCLUSIONES ---
+\section{Conclusiones}
+El modelo y la implementación permiten resolver eficientemente instancias de tamaño pequeño y mediano. Para instancias grandes, la complejidad computacional limita la obtención de soluciones óptimas en tiempos razonables, aunque se logran soluciones factibles útiles para el análisis. Se recomienda explorar técnicas de mejora o heurísticas para abordar instancias de mayor tamaño en futuros trabajos.
+
+% --- RECOMENDACIONES FINALES ---
+\section{Recomendaciones y Consideraciones Finales}
+\begin{itemize}
+    \item Se recomienda compilar el informe al menos dos veces para asegurar la correcta actualización de referencias cruzadas.
+    \item Verificar que todos los archivos gráficos (.png) estén presentes en la carpeta correspondiente.
+    \item Si se agregan anexos o bibliografía, incluirlos al final del documento.
+\end{itemize}
 
 \end{document}

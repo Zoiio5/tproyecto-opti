@@ -109,3 +109,33 @@ trans_cost = [5.53, 7.14, 4.84, 5.64, 5.27, 6.12, 9.47, 3.20, 7.03, 3.58, 5.29, 
 % Total supply: 2308.14
 % Total demand: 1775.49
 % Balance factor: 1.30
+
+%Finished in 5m 24s.
+%Grupo: 5
+%Fecha/Hora: 2025-06-22
+%Estado: Optimizado
+
+%--- COSTOS ---
+%Costo Instalación: $270.00
+%Costo Transporte:  $129422.30
+%Penalización:      $1620010.00
+%COSTO TOTAL:       $1749702.30
+
+%--- ESTADÍSTICAS DE RED ---
+%Nodos: P=3 T=12 C1=12 C2=28 (Total: 55)
+%Arcos totales: 87
+%Arcos activos: 9
+%Utilización: 10%
+
+%--- FLUJOS ---
+%Suministro total: 2308.14 l/min
+%Demanda total: 1775.49 l/min
+%Flujo enviado: 155.48 l/min
+%Demanda satisfecha: 155.4800000000002 l/min
+%Demanda no satisfecha: 1620.01 l/min
+%Eficiencia: 8.757019189068949%
+
+%--- DIÁMETROS UTILIZADOS ---
+%D75mm: 9 arcos
+%D100mm: 0 arcos
+%D150mm: 0 arcos

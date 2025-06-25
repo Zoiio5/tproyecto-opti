@@ -69,3 +69,33 @@ trans_cost = [6.13, 5.55, 6.14, 3.02, 5.67, 6.54, 8.22, 5.22, 4.79, 5.25, 7.37, 
 % Total supply: 1199.01
 % Total demand: 922.32
 % Balance factor: 1.30
+%Finished in 9s 986msec.
+%=== RESULTADOS OPTIMIZACIÓN RED DE TUBERÍAS - GRUPO 5 (CP-SAT) ===
+%Grupo: 5
+%Fecha/Hora: 2025-06-22
+%Estado: Optimizado
+
+%--- COSTOS ---
+%Costo Instalación: $70.00
+%Costo Transporte:  $43748.87
+%Penalización:      $871390.00
+%COSTO TOTAL:       $915208.87
+
+%--- ESTADÍSTICAS DE RED ---
+%Nodos: P=3 T=6 C1=7 C2=14 (Total: 30)
+%Arcos totales: 47
+%Arcos activos: 2
+%Utilización: 4%
+
+%--- FLUJOS ---
+%Suministro total: 1199.01 l/min
+%Demanda total: 922.3200000000002 l/min
+%Flujo enviado: 50.93 l/min
+%Demanda satisfecha: 50.93000000000018 l/min
+%Demanda no satisfecha: 871.39 l/min
+%Eficiencia: 5.521944661288947%
+
+--- DIÁMETROS UTILIZADOS ---
+D75mm: 2 arcos
+D100mm: 0 arcos
+D150mm: 0 arcos
