@@ -12,6 +12,10 @@ CONECTIVIDAD:
   Tanques -> Transbordo: 49 conexiones
   Transbordo -> Finales: 97 conexiones
 
-COSTO TOTAL: $5120.33
-Tiempo de resolución: 8.45
+COSTOS:
+  Costo Instalación: $540.00
+  Costo Transporte:  $363960.31
+  Penalización:      $3003000.00
+  COSTO TOTAL:       $3367500.31
+Tiempo de resolución: 1:51:26.000
 

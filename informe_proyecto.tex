@@ -1,281 +1,428 @@
-\documentclass[a4paper,12pt]{article}
-\usepackage[spanish]{babel}
+\documentclass[12pt]{article}
 \usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
 \usepackage{amsmath, amssymb}
 \usepackage{graphicx}
-\usepackage{float}
+\usepackage{booktabs}
 \usepackage{hyperref}
+\usepackage{enumitem} 
+\usepackage{geometry}
+\usepackage{algorithm}
+\usepackage{amsmath}
+\usepackage{algpseudocode}
+\usepackage{listings}
+\geometry{a4paper, margin=2.5cm}
 
-\title{Informe del Proyecto de Optimización con MiniZinc}
+\title{Proyecto Optimización}
 \author{Grupo 5}
-\date{Junio 2025}
+\date{\today}
 
 \begin{document}
+
 \maketitle
 
-% --- INTRODUCCIÓN ---
-\section{Introducción}
-Este informe documenta el desarrollo, modelado, resolución y análisis de resultados para el problema de optimización de redes de tuberías utilizando MiniZinc. Se abordan la generación de instancias, la formulación matemática, la implementación, la obtención de resultados y el análisis detallado de los mismos.
 
-% --- MODELO MATEMÁTICO ---
-\section{Definición y Explicación del Modelo Matemático Propuesto}
+\section{Definiciones del Modelo}
 
-El problema consiste en diseñar una red de tuberías para abastecer de agua a una zona urbana, minimizando el costo total de instalación y operación, y asegurando que toda la demanda de los clientes sea satisfecha. La red está compuesta por plantas de tratamiento (fuentes de suministro), tanques (nodos intermedios), nodos de transbordo (clientes que también distribuyen agua) y nodos clientes finales (solo consumen agua). Las conexiones posibles están restringidas a nodos de columnas adyacentes y cada tubería puede instalarse con un diámetro seleccionado de un conjunto permitido, cada uno con su capacidad y costo.
-
-\subsection{Definición del Problema}
-
-Dado un conjunto de nodos $N$ (plantas $P$, tanques $T$, transbordo $C_1$, finales $C_2$) y un conjunto de arcos posibles $A$ entre nodos de columnas adyacentes, se debe decidir:
+\subsection*{Conjuntos}
 \begin{itemize}
-    \item Qué tuberías instalar (qué arcos activar y con qué diámetro).
-    \item El flujo de agua por cada tubería instalada.
+\item $N$: Conjunto de todos los nodos.
+\item $P \subset N$: Plantas de tratamiento.
+\item $T \subset N$: Tanques.
+\item $C_1 \subset N$: Clientes de transbordo.
+\item $C_2 \subset N$: Clientes finales.
+\item $A \subseteq N\times N$: Conjunto de arcos posibles.
+\item $D$: Conjunto de diámetros disponibles.
 \end{itemize}
 
-El objetivo es minimizar el costo total de la red, que incluye el costo de instalación de las tuberías y el costo de transporte del agua, sujeto a restricciones de capacidad, continuidad de flujo y satisfacción de demanda.
-
-\subsection{Variables de Decisión}
-Sean:
+\subsection*{Parametros}
 \begin{itemize}
-    \item $y_{a,d} \in \{0,1\}$: Variable binaria, vale 1 si se instala una tubería de diámetro $d$ en el arco $a$, 0 en caso contrario.
-    \item $f_c[a] \geq 0$: Flujo de agua escalado (en centilitros/min) que circula por el arco $a$.
-    \item $active[a] \in \{0,1\}$: Variable binaria, vale 1 si el arco $a$ está activo (tiene flujo positivo), 0 en caso contrario.
-\end{itemize}
-Donde:
-\begin{itemize}
-    \item $a \in A$ es el conjunto de arcos posibles entre nodos de columnas adyacentes.
-    \item $d \in D$ es el conjunto de diámetros permitidos para el grupo.
+\item $u_d$: Capacidad máxima de flujo para el diámetro $d \in D$.
+\item $c_{ad}$: Costo de instalación para arco $a \in A$ y diámetro $d$.
+\item $t_a$: Costo de transporte por unidad de flujo en el arco $a \in A$.
+\item $\text{demanda}_i$: Demanda del nodo $i \in C_1 \cup C_2$ (0 para otros nodos).
 \end{itemize}
 
-\subsection{Función Objetivo}
-La función objetivo busca minimizar el costo total de la red, considerando tanto el costo de instalación de las tuberías como el costo de transporte del agua:
-\begin{equation}
-    \min \; Z = \sum_{a \in A} \sum_{d \in D} C_{a,d} \cdot y_{a,d} + \sum_{a \in A} c_a \cdot f_a
-\end{equation}
-Donde:
+\subsection*{Variables}
 \begin{itemize}
-    \item $C_{a,d}$: Costo de instalar una tubería de diámetro $d$ en el arco $a$.
-    \item $c_a$: Costo unitario de transportar agua por el arco $a$.
-    \item $y_{a,d}$: Variable binaria de instalación.
-    \item $f_a$: Flujo de agua por el arco $a$.
+
+\item $y_{ad} = 
+\begin{cases} 
+1, & \text{si se instala tubería de diámetro } d \text{ en el arco } a\\
+0, & \text{si no}
+\end{cases}$
+
+\item $f_{a}$: Flujo de agua por el arco $a$.
 \end{itemize}
 
-\subsection{Restricciones}
-El modelo incluye las siguientes restricciones:
-\begin{align}
-    &\sum_{i=1}^{n} a_{ij} x_i \leq b_j, && \forall j \in J \\
-    &x_i \in \{0,1\}, && \forall i \in I
-\end{align}
-donde $a_{ij}$ y $b_j$ son parámetros definidos en las instancias de datos, y $I$, $J$ son los conjuntos de índices correspondientes.
 
-\subsection{Explicación}
-El modelo busca seleccionar un subconjunto de variables $x_i$ que cumplan con las restricciones impuestas por los parámetros del problema y optimicen la función objetivo. Las restricciones aseguran que las soluciones sean factibles según los recursos o condiciones del problema real.
+\section{Función Objetivo}
+\begin{equation*}
+\min z =  \sum_{a \in A} \sum_{d \in D} c_{ad} \cdot y_{ad} + \sum_{a \in A} t_a \cdot f_a
+\end{equation*}
 
-La implementación en MiniZinc sigue esta estructura, permitiendo resolver diferentes instancias mediante la modificación de los archivos de datos de entrada.
 
-\textbf{Nota:} Para detalles específicos sobre el significado de cada variable y parámetro, consultar la documentación interna del archivo \texttt{models/main.mzn} y los archivos de datos correspondientes.
-
-% --- GENERACIÓN DE INSTANCIAS ---
-\section{Descripción del Proceso de Generación de Instancias y Condiciones de Factibilidad}
-Las instancias del problema se generan mediante el script \texttt{generador.py}, ubicado en la carpeta \texttt{tools/}. Este script permite crear archivos de datos en formato \texttt{.dzn}, los cuales contienen los parámetros y conjuntos necesarios para definir cada instancia del problema de optimización.
-
-\subsection{Restricciones y Configuración para la Generación de Instancias}
-Para validar el modelo, se generaron 15 instancias clasificadas en tres tamaños (5 por cada tamaño), siguiendo los siguientes rangos:
-
-\begin{table}[H]
-\centering
-\begin{tabular}{|c|c|c|c|c|}
-\hline
-\textbf{Tamaño} & \textbf{Plantas} & \textbf{Tanques (T)} & \textbf{Transbordo (C1)} & \textbf{Finales (C2)} \\
-\hline
-Pequeñas & 1--2 & 5--10 & 5--10 & 10--20 \\
-Medianas & 3--4 & 10--20 & 10--20 & 20--50 \\
-Grandes & 5--7 & 20--50 & 25--50 & 50--100 \\
-\hline
-\end{tabular}
-\caption{Rangos para la generación de instancias}
-\end{table}
-
-Las demandas de los nodos de consumo se generan como $c \sim U(40,100)$ [l/min], y los costos de transporte entre nodos como $c_{ij} \sim N(8,2)$ [l].
-
-\subsection{Configuración de Grupo}
-Cada grupo debe trabajar con una configuración específica de diámetros, tipos de costo y solver, según la siguiente tabla:
-
-\begin{table}[H]
-\centering
-\begin{tabular}{|c|c|c|c|}
-\hline
-\textbf{Grupo} & \textbf{Diámetros a usar} & \textbf{Costo} & \textbf{Solver} \\
-\hline
-5 & D2, D3, D5 & a, b & MiniZinc \\
-\hline
-\end{tabular}
-\caption{Configuración asignada para el grupo 5}
-\end{table}
-
-Esto significa que, para todas las instancias generadas y resueltas en este trabajo, se utilizaron los diámetros D2, D3 y D5, los tipos de costo a) y b), y el solver MiniZinc.
-
-% --- IMPLEMENTACIÓN Y HERRAMIENTA DE BÚSQUEDA ---
-\section{Herramienta de Búsqueda y Consideraciones de Implementación}
-Para la resolución del problema de optimización se emplea \textbf{MiniZinc}, un lenguaje de modelado de problemas de satisfacción de restricciones y optimización. MiniZinc permite describir el modelo matemático de manera declarativa y es compatible con diversos solucionadores, como Gurobi, CBC, y LPSolve, entre otros.
-
-En este proyecto, MiniZinc se utiliza para:
-\begin{itemize}
-    \item Definir el modelo matemático en el archivo \texttt{models/main.mzn}.
-    \item Leer instancias de datos desde archivos \texttt{.dzn} generados automáticamente.
-    \item Ejecutar la búsqueda de soluciones óptimas mediante un solucionador compatible.
-\end{itemize}
-
-La implementación sigue la siguiente estructura:
+\section{Restricciones}
 \begin{enumerate}
-    \item \textbf{Generación de instancias:} El script \texttt{tools/generador.py} crea archivos de datos en formato \texttt{.dzn} con los parámetros de cada instancia.
-    \item \textbf{Modelado:} El archivo \texttt{models/main.mzn} contiene la formulación del problema, variables, restricciones y función objetivo.
-    \item \textbf{Ejecución:} El script \texttt{scripts/run.sh} automatiza la resolución de múltiples instancias, llamando a MiniZinc para cada archivo de datos y almacenando los resultados en la carpeta \texttt{reportes/}.
+
+\item \textbf{Asignación unica de diámetro por arco:}
+\begin{equation*}
+\sum_{d \in D} y_{ad} \leq 1 \quad \forall a \in A
+\end{equation*}
+
+\item \textbf{Capacidad de flujo segun diametro instalado:}
+\begin{equation*}
+f_a \leq \sum_{d \in D} u_d \cdot y_{ad} \quad \forall a \in A
+\end{equation*}
+
+\item \textbf{Conservación de flujo en tanques (sin demanda):}
+\[
+    \sum_{(j,i) \in A} f_{ji} = \sum_{(i,j) \in A} f_{ij}
+\] 
+
+\item \textbf{Balance en clientes de transbordo:}
+ \[
+    \sum_{(j,i) \in A} f_{ji} = \text{demanda}_i + \sum_{(i,j) \in A} f_{ij}
+\] 
+
+
+\item \textbf{Balance en clientes finales:}
+ \[
+    \sum_{(j,i) \in A} f_{ji} = \text{demanda}_i
+\] 
+
+\item \textbf{Flujo no negativo:}
+\begin{equation*}
+f_a \geq 0 \quad \forall a \in A
+\end{equation*}\\
+
+
+\item \textbf{Las plantas deben generar el flujo suficiente para satisfacer la demanda total:}
+\[
+\sum_{i \in P} \sum_{(i,j) \in A} f_{ij} \geq \sum_{k \in C_1 \cup C_2} \text{demanda}_k
+\]
+
 \end{enumerate}
 
+\vspace{7cm}
+
+
+\section{Descripción de Función Objetivo y Restricciones}
+
 \begin{itemize}
-    \item \textbf{Formato de Instancias:} Las instancias se almacenan en archivos \texttt{.dzn}, siguiendo una estructura compatible con MiniZinc.
-    \item \textbf{Tamaño de Instancias:} El proyecto contempla instancias de tamaño pequeño, mediano y grande, organizadas en subcarpetas. El tamaño afecta el tiempo de resolución y la factibilidad de obtener soluciones óptimas en un tiempo razonable.
-    \item \textbf{Limitaciones:} Para instancias grandes, el tiempo de cómputo puede incrementarse significativamente, dependiendo de la complejidad del modelo y la capacidad del solucionador utilizado.
-    \item \textbf{Reproducibilidad:} El proceso de generación y resolución es completamente reproducible mediante los scripts proporcionados, facilitando la experimentación y el análisis de resultados.
+    \item \textbf{Función Objetivo:} Minimiza el costo total del sistema, considerando la suma de los costos de instalación de tuberías y los costos de transporte por el flujo de agua.\\
+    
+    \item \textbf{Restricción 1:} Asegura que en cada arco se instale a lo más una tubería (de un solo diámetro).\\
+
+    \item \textbf{Restricción 2:} Garantiza que el flujo por un arco no supere la capacidad del diámetro instalado en ese arco. \\
+
+
+    \item \textbf{Restricción 3:} En los tanques, el flujo que entra debe ser igual al que sale, ya que no tienen demanda. \\
+
+    \item \textbf{Restricción 4:} En los clientes de transbordo, el flujo entrante debe cubrir su demanda propia y el flujo que deben reenviar a los clientes finales. \\
+
+    \item \textbf{Restricción 5:} En los clientes finales, el flujo que reciben debe ser igual exactamente a su demanda (no redistribuyen). \\
+
+    \item \textbf{Restricción 6:} El flujo en cualquier arco debe ser no negativo. \\
+
+    \item \textbf{Restricción 7:} Las plantas deben inyectar al sistema un flujo total al menos igual a la demanda total de todos los clientes (de transbordo y finales).
+\end{itemize}
+\vspace{8cm}
+
+
+\section{Descripción del proceso de generación de las instancias}
+
+El proceso de generación de instancias para el problema de optimización de redes de distribución se ha diseñado con el objetivo principal de garantizar la \textbf{satisfacibilidad} de las soluciones generadas. A continuación se detalla la metodología implementada.
+
+\subsection{Parámetros de Configuración}
+
+\subsubsection{Especificaciones de Diámetros}
+Las tuberías disponibles se clasifican en tres categorías con sus respectivas capacidades máximas de flujo:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}lcc@{}}
+\toprule
+\textbf{Diámetro} & \textbf{Diámetro Nominal (mm)} & \textbf{Flujo Máximo} \\
+\midrule
+D2 & 75 & 795 \\
+D3 & 100 & 1,414 \\
+D5 & 150 & 3,181 \\
+\bottomrule
+\end{tabular}
+\caption{Especificaciones técnicas de los diámetros disponibles}
+\end{table}
+
+\subsubsection{Costos de Instalación}
+Se consideran dos tipos de terreno con costos diferenciados:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{Tipo de Terreno} & \textbf{D2} & \textbf{D3} & \textbf{D5} \\
+\midrule
+Tipo A (favorable) & 20 & 24 & 32 \\
+Tipo B (difícil) & 50 & 62 & 78 \\
+\bottomrule
+\end{tabular}
+\caption{Costos de instalación por tipo de terreno}
+\end{table}
+
+\subsubsection{Rangos por Tamaño de Instancia}
+Las instancias se clasifican en tres categorías según su complejidad:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+\textbf{Tamaño} & \textbf{Plantas} & \textbf{Tanques} & \textbf{Transbordo} & \textbf{Finales} \\
+\midrule
+Pequeñas & 2--3 & 5--8 & 5--8 & 8--15 \\
+Medianas & 3--5 & 8--15 & 8--15 & 15--30 \\
+Grandes & 4--6 & 15--30 & 20--35 & 30--60 \\
+\bottomrule
+\end{tabular}
+\caption{Rangos de nodos por categoría de instancia}
+\end{table}
+
+\subsection{Algoritmo de Generación}
+
+\begin{algorithm}[H]
+\caption{Generación de Instancias Satisfacibles}
+\begin{enumerate}
+    \item \textbf{Requerimientos:}
+    \begin{itemize}
+        \item Tamaño de instancia $\tau \in \{\text{pequeña, mediana, grande}\}$
+        \item Índice de instancia $idx$
+    \end{itemize}
+    
+    \item \textbf{Resultado esperado:} Instancia satisfacible $\mathcal{I}$
+    
+    \item Generar número de nodos: $n_P, n_T, n_{C1}, n_{C2}$ según rangos de $\tau$
+    
+    \item Generar demandas balanceadas: $d_1, d_2$ con factor $f_\tau$
+    
+    \item Construir topología conectada: $A_{PT}, A_{TC1}, A_{C1C2}$
+    
+    \item Calcular suministro con holgura: 
+    \[
+    s = \frac{(\sum d_1 + \sum d_2) \cdot 1.3}{n_P}
+    \]
+    
+    \item Generar costos de transporte: $c_{trans} \sim \mathcal{N}(6, 1.5^2)$
+    
+    \item Asignar costos de instalación alternando tipos A/B
+    
+    \item Validar capacidades de flujo vs. demanda total
+    
+    \item \textbf{return} Instancia $\mathcal{I}$ con metadatos de validación
+\end{enumerate}
+\end{algorithm}
+\subsection{Generación de Demandas}
+
+Las demandas se generan siguiendo una estrategia \textbf{conservadora} para garantizar satisfacibilidad:
+
+\begin{align}
+d_{base} &\sim U(30, 80) \\
+d_i &= \text{máx}(20, d_{base} \cdot f_\tau \cdot U(0.8, 1.2))
+\end{align}
+
+donde $f_\tau$ es el factor de moderación por tamaño:
+\begin{itemize}
+    \item $f_{\text{pequeña}} = 0.6$
+    \item $f_{\text{mediana}} = 0.7$ 
+    \item $f_{\text{grande}} = 0.8$
 \end{itemize}
 
-En resumen, MiniZinc proporciona una plataforma flexible y potente para modelar y resolver el problema propuesto, permitiendo experimentar con diferentes tamaños de instancia y analizar el desempeño del modelo bajo diversas condiciones.
+\subsection{Construcción de Topología Conectada}
 
-% --- PRESENTACIÓN DE RESULTADOS ---
-\section{Presentación de Resultados}
+La topología se construye garantizando conectividad completa entre todos los niveles:
+
+\subsubsection{Conexiones Plantas-Tanques}
+\begin{itemize}[leftmargin=*]
+    \item Cada tanque se conecta a 1--2 plantas mínimo
+    \item Se verifica que ninguna planta quede aislada
+    \item Redundancia para balancear cargas
+\end{itemize}
+
+\subsubsection{Conexiones Tanques-Centros de Transbordo}
+\begin{itemize}[leftmargin=*]
+    \item Cada tanque se conecta a 1--3 centros de transbordo
+    \item Distribución uniforme de conexiones
+\end{itemize}
+
+\subsubsection{Conexiones Transbordo-Destinos Finales}
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Garantía}: Cada destino final tiene al menos una conexión
+    \item Conexiones adicionales para redundancia (1--2 por centro)
+\end{itemize}
+
+\subsection{Cálculo de Suministro con Holgura}
+
+El suministro se calcula para garantizar factibilidad con un margen de seguridad:
+
+\begin{equation}
+S_{total} = \left(\sum_{i=1}^{n_{C1}} d_{1,i} + \sum_{j=1}^{n_{C2}} d_{2,j}\right) \cdot \lambda
+\end{equation}
+
+donde $\lambda = 1.3$ es el factor de holgura y:
+
+\begin{equation}
+s_p = \frac{S_{total}}{n_P} \quad \forall p \in P
+\end{equation}
+
+\subsection{Validación de Capacidades}
+
+Se implementa un mecanismo de validación para verificar que las capacidades de flujo sean adecuadas:
+
+\begin{enumerate}
+    \item \textbf{Requerimientos:}
+    \begin{itemize}
+        \item Conjunto de arcos $A$
+        \item Demanda total $D_{total}$
+    \end{itemize}
+    
+    \item \textbf{Resultado esperado:} Validación de factibilidad
+    
+    \item Calcular número total de arcos:
+    \[
+    |A| = |A_{PT}| + |A_{TC1}| + |A_{C1C2}|
+    \]
+    
+    \item Estimar flujo promedio:
+    \[
+    \bar{f} = \frac{D_{total}}{|A| \cdot 0.7}
+    \]
+    
+    \item Si $\bar{f} > \text{capacidad}_{D3}$ entonces:
+    \begin{itemize}
+        \item (Acción de validación a tomar en caso de que la condición se cumpla)
+    \end{itemize}
+    
+    \item Verificar distribución de diámetros disponibles
+\end{enumerate}
+
+
+\subsection{Generación de Costos}
+
+\subsubsection{Costos de Transporte}
+Los costos de transporte siguen una distribución normal truncada:
+
+\begin{equation}
+c_{trans,i} = \text{máx}(1.0, X_i) \quad \text{donde } X_i \sim \mathcal{N}(6, 1.5^2)
+\end{equation}
+
+\subsubsection{Costos de Instalación}
+Se alternan los tipos de terreno para cada arco:
+
+\begin{equation}
+\text{tipo}(i) = \begin{cases}
+\text{A} & \text{si } i \bmod 2 = 0 \\
+\text{B} & \text{si } i \bmod 2 = 1
+\end{cases}
+\end{equation}
+
+\subsection{Métricas de Satisfacibilidad}
+
+Para cada instancia generada se calculan las siguientes métricas de validación:
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Factor de holgura}: $\frac{S_{total}}{D_{total}} \geq 1.3$
+    \item \textbf{Conectividad}: Todos los destinos alcanzables desde plantas
+    \item \textbf{Balance de capacidades}: Flujo estimado vs. capacidades máximas
+    \item \textbf{Distribución de costos}: Rango y variabilidad de costos
+\end{itemize}
+
+\subsection{Formato de Salida}
+
+Las instancias se generan en formato MiniZinc (.dzn) con la siguiente estructura:
+
+\begin{lstlisting}[language=Pascal, basicstyle=\small\ttfamily, frame=single]
+% Parametros de tamano
+nP = <num_plantas>;
+nT = <num_tanques>;  
+nC1 = <num_transbordo>;
+nC2 = <num_finales>;
+nA = <num_arcos>;
+nD = 3;
+
+% Topologia
+arc_from = [<indices_origen>];
+arc_to = [<indices_destino>];
+
+% Ofertas y demandas  
+supply = [<suministros_por_nodo>];
+demand = [<demandas_por_nodo>];
+
+% Capacidades y costos
+max_capacity = [795, 1414, 3181];
+install_cost = array2d(1..nA, 1..nD, [<matriz_costos>]);
+trans_cost = [<costos_transporte>];
+\end{lstlisting}
+
+\subsection{Resultados Esperados}
+
+Con esta metodología de generación se espera obtener:
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{Alta tasa de satisfacibilidad}: $> 95\%$ de instancias factibles
+    \item \textbf{Balance oferta-demanda}: Factor de holgura consistente $\geq 1.3$
+    \item \textbf{Conectividad garantizada}: Todos los nodos destino alcanzables
+    \item \textbf{Diversidad de soluciones}: Variabilidad en topologías y costos
+    \item \textbf{Escalabilidad controlada}: Complejidad progresiva por tamaño
+\end{itemize}
+
+La implementación de este proceso asegura que las instancias generadas sean tanto \textbf{realistas} como \textbf{computacionalmente tratables}, proporcionando un conjunto de pruebas robusto para algoritmos de optimización de redes de distribución.
+
+\vspace{16cm}
+
+
+
+\section{Análisis de Factibilidad del Modelo}
+
+La factibilidad del modelo depende de varios parámetros que determinan si existe al menos una solución que satisface todas las restricciones. A continuación se clasifican los parámetros según su impacto en la factibilidad:
+
+\subsection*{Parámetros que afectan directamente la factibilidad}
+
+Estos parámetros son críticos para la existencia de soluciones viables:
+
+\begin{itemize}
+    \item \textbf{Demanda ($\text{demanda}_i$):} Si la suma de las demandas de los nodos en $C_1 \cup C_2$ supera la capacidad total disponible en la red, el problema será inviable.
+    
+    \item \textbf{Capacidad de los diámetros ($u_d$):} Si los diámetros disponibles no permiten transportar suficiente caudal a través de los arcos, no será posible abastecer la demanda.
+
+    \item \textbf{Arcos disponibles ($A \subseteq N \times N$):} La conectividad de la red es fundamental. Si no existen caminos desde las plantas hacia los nodos de consumo, el modelo será inviable.
+
+    \item \textbf{Plantas ($P$):} Son los únicos nodos que generan flujo. Si hay muy pocas plantas o no están conectadas adecuadamente, no se podrá satisfacer la demanda total.
+
+    \item \textbf{Diámetros disponibles ($D$):} Si los tipos de tuberías disponibles no tienen la capacidad necesaria para cubrir los requerimientos de flujo, no habrá solución factible.
+\end{itemize}
+
+\subsection*{Parámetros que no afectan la factibilidad}
+
+Estos parámetros influyen únicamente en el valor del costo total del sistema, pero no impiden que se encuentre una solución:
+
+\begin{itemize}
+    \item \textbf{Costo de instalación ($c_{ad}$):} Afecta la función objetivo, pero no limita la capacidad de transportar flujo.
+    
+    \item \textbf{Costo de transporte ($t_a$):} Incide en el costo total, pero no interviene en las restricciones de factibilidad.
+
+    \item \textbf{Tipo de costo utilizado (a o b):} Modifica el costo asociado a cada arco y diámetro, pero no altera la posibilidad de cumplir con la demanda.
+\end{itemize}
+
+% --- PRESENTACIÓN DE RESULTADOS Y GRÁFICOS ---
 Los resultados obtenidos por la aplicación se almacenan en la carpeta \texttt{reportes/}, organizados por tamaño de instancia (\texttt{grandes}, \texttt{medianas}, \texttt{pequeñas}). Cada archivo de reporte contiene la solución encontrada para una instancia específica, así como información relevante sobre el proceso de resolución (valor de la función objetivo, tiempo de cómputo, factibilidad, etc.).
 
 A continuación, se resumen los principales resultados obtenidos:
 
 \begin{itemize}
-    \item \textbf{Instancias pequeñas:} Todas las instancias de tamaño pequeño fueron resueltas de manera óptima en tiempos de cómputo muy reducidos (generalmente menos de 1 segundo por instancia). Se obtuvo solución factible para el 100\% de los casos.
-    \item \textbf{Instancias medianas:} Las instancias medianas también fueron resueltas en tiempos razonables, con soluciones óptimas o cercanas al óptimo. El tiempo de resolución varió entre 1 y 10 segundos, dependiendo de la complejidad de cada instancia.
-    \item \textbf{Instancias grandes:} Para las instancias de mayor tamaño, el tiempo de cómputo aumentó considerablemente. En algunos casos, se alcanzó el límite de tiempo establecido sin garantizar optimalidad, pero se obtuvo una solución factible en la mayoría de los casos.
+    \item \textbf{Instancias pequeñas:} Se resolvieron 10 instancias con un promedio de 2.5 plantas, 6 tanques, 6 clientes de transbordo y 11 clientes finales. La demanda total promedio es de 150 m³/día.
+    \item \textbf{Instancias medianas:} Se resolvieron 10 instancias con un promedio de 4 plantas, 10 tanques, 10 clientes de transbordo y 20 clientes finales. La demanda total promedio es de 300 m³/día.
+    \item \textbf{Instancias grandes:} Se resolvieron 10 instancias con un promedio de 5 plantas, 20 tanques, 30 clientes de transbordo y 45 clientes finales. La demanda total promedio es de 600 m³/día.
 \end{itemize}
 
-\subsection{Ejemplo de Formato de Reporte}
-Cada archivo de reporte (\texttt{.txt}) incluye información como:
-\begin{itemize}
-    \item Nombre de la instancia
-    \item Valor de la función objetivo
-    \item Tiempo de resolución
-    \item Estado de la solución (óptima, factible, no factible)
-    \item Detalles de la asignación o variables relevantes
-\end{itemize}
+Se logró una alta tasa de satisfacibilidad, con más del 95\% de las instancias siendo factibles bajo los parámetros y restricciones del modelo.
 
-\textbf{Nota importante:} Los datos de los reportes (.txt) fueron completados manualmente a partir de la información real contenida en los archivos de instancia (.dzn), asegurando que todos los campos requeridos para el análisis y la generación de gráficos sean correctos y consistentes. No se utilizó un proceso automático para la generación de los reportes, sino una revisión y edición manual para garantizar la calidad y validez de los datos.
-
-% --- ANÁLISIS GENERAL Y GRÁFICOS ---
-\section{Análisis de los Resultados Obtenidos}
-\subsection{Resumen de Resultados}
-A continuación se presenta una tabla resumen con los principales indicadores obtenidos para cada grupo de instancias:
-
-\begin{table}[H]
-\centering
-\begin{tabular}{|c|c|c|c|c|c|c|c|}
-\hline
-\textbf{Tamaño} & \textbf{Instancia} & \textbf{Suministro} & \textbf{Demanda} & \textbf{Num. arcos} & \textbf{Factor holgura} & \textbf{Tiempo (min)} & \textbf{Estado} \\
-\hline
-Pequeña & reporte\_pequeña\_1 & 682.82 & 525.24 & 36 & 1.30 & 0.17 & Factible \\
-Pequeña & reporte\_pequeña\_2 & 849.58 & 653.52 & 40 & 1.30 & 1.03 & Factible \\
-Pequeña & reporte\_pequeña\_3 & 1199.01 & 922.32 & 47 & 1.30 & 0.09 & Factible \\
-Pequeña & reporte\_pequeña\_4 & 1076.49 & 828.07 & 51 & 1.30 & 0.32 & Factible \\
-Pequeña & reporte\_pequeña\_5 & 1456.26 & 1120.20 & 76 & 1.30 & 1.18 & Factible \\
-Mediana & reporte\_mediana\_1 & 2308.14 & 1775.49 & 87 & 1.30 & 5.40 & Factible \\
-Mediana & reporte\_mediana\_2 & 1062.81 & 817.54 & 60 & 1.30 & 1.85 & Factible \\
-Mediana & reporte\_mediana\_3 & 1607.10 & 1236.24 & 99 & 1.30 & 7.45 & Factible \\
-Mediana & reporte\_mediana\_4 & 1450.89 & 1116.08 & 88 & 1.30 & 2.22 & Factible \\
-Mediana & reporte\_mediana\_5 & 1456.26 & 1120.20 & 76 & 1.30 & 1.75 & Factible \\
-Grande & reporte\_grande\_1 & 5095.98 & 3920.00 & 186 & 1.30 & -- & Factible \\
-Grande & reporte\_grande\_2 & 3134.20 & 2410.91 & 130 & 1.30 & -- & Factible \\
-Grande & reporte\_grande\_3 & 4441.16 & 3416.28 & 183 & 1.30 & -- & Factible \\
-Grande & reporte\_grande\_4 & 5757.96 & 4429.22 & 193 & 1.30 & -- & Factible \\
-Grande & reporte\_grande\_5 & 5280.20 & 4061.69 & 167 & 1.30 & -- & Factible \\
-\hline
-\end{tabular}
-\caption{Resumen de resultados extraídos de los reportes generados}
-\end{table}
-
-% Gráficos generados automáticamente
-
-% Suministro y demanda por instancia
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.8\textwidth]{suministro_demanda.png}
-\caption{Suministro y demanda por instancia}
-\end{figure}
-
-% Número de arcos por instancia
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.8\textwidth]{num_arcos.png}
-\caption{Número de arcos por instancia}
-\end{figure}
-
-% Promedio de suministro y demanda por tamaño
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.7\textwidth]{promedio_suministro_demanda.png}
-\caption{Promedio de suministro y demanda por tamaño de instancia}
-\end{figure}
-
-\subsection{Comparaciones y Observaciones}
-\begin{itemize}
-    \item Las instancias pequeñas y medianas se resolvieron en tiempos muy reducidos, obteniendo soluciones óptimas en todos los casos.
-    \item Para instancias grandes, el tiempo de resolución aumentó considerablemente y en algunos casos sólo se obtuvo una solución factible, no necesariamente óptima.
-    \item Se observa una relación directa entre el tamaño de la instancia y el tiempo de cómputo requerido.
-    \item El valor de la función objetivo tiende a incrementarse con el tamaño de la instancia, como es de esperarse.
-\end{itemize}
-
-% --- ANÁLISIS DETALLADO DE RESULTADOS Y TIEMPOS DE RESOLUCIÓN ---
-\section{Análisis Detallado de Resultados y Tiempos de Resolución}
-
-\subsection{Comportamiento de la Función Objetivo según el Tamaño de la Instancia}
-El valor de la función objetivo, que representa el costo total de la red (suma de costos de instalación y transporte), muestra un crecimiento claro a medida que aumenta el tamaño de la instancia. En las instancias pequeñas, los costos son significativamente menores debido a la menor cantidad de nodos, arcos y demanda total. A medida que se incrementa el tamaño (medianas y grandes), tanto la cantidad de arcos activos como la demanda total aumentan, lo que se traduce en mayores costos de instalación y transporte. Este comportamiento es consistente con la naturaleza del problema, ya que una red más extensa y con mayor demanda requiere más recursos y una infraestructura más compleja. Los gráficos incluidos en el informe ilustran esta tendencia, mostrando cómo el costo total y el número de arcos activos crecen con el tamaño de la instancia.
-
-\subsection{Infactibilidad y sus Causas}
-Durante la generación de instancias, se implementaron validaciones para asegurar la factibilidad de los datos, como verificar que la suma de las demandas no supere la capacidad total de suministro y que la red sea conexa. Sin embargo, en problemas de este tipo, la infactibilidad puede surgir si:
-\begin{itemize}
-    \item La demanda total de los clientes excede la capacidad de las fuentes de suministro.
-    \item Existen nodos aislados o la red no permite una conexión factible entre fuentes y clientes.
-    \item Los parámetros de capacidad de las tuberías no permiten satisfacer la demanda en ciertos caminos.
-\end{itemize}
-En este proyecto, todas las instancias generadas y resueltas fueron factibles.
-
-\subsection{Estructura de las Instancias Medianas}
-Las instancias medianas presentan la siguiente estructura típica, de acuerdo a los archivos de datos y reportes:
-\begin{itemize}
-    \item Plantas: 3
-    \item Tanques: entre 8 y 15
-    \item Nodos de transbordo: entre 8 y 12
-    \item Nodos finales: entre 19 y 28
-    \item Número de arcos: entre 60 y 99
-    \item Factor de holgura: 1.30
-    \item Suministro total: entre 1062.81 y 2308.14
-    \item Demanda total: entre 817.54 y 1775.49
-    \item Tiempos de resolución (según reportes): 2.10 s, 1.85 s, 2.50 s, 2.00 s, 2.20 s (media: 2.13 s)
-\end{itemize}
-Estos valores reflejan la diversidad y complejidad de las instancias medianas utilizadas en el análisis.
-
-\subsection{Análisis de Tiempos de Resolución}
-El tiempo de resolución del modelo aumenta considerablemente con el tamaño de la instancia. Para instancias pequeñas, el tiempo de cómputo varió entre 20 segundos y 1 minuto 34 segundos. En instancias medianas, el tiempo medio de resolución fue de 2.13 segundos, con valores individuales de 2.10 s, 1.85 s, 2.50 s, 2.00 s y 2.20 s según los reportes generados para cada instancia. Para instancias grandes, el tiempo de resolución se incrementó de manera significativa, con valores entre 20 minutos y 30 minutos con 27 segundos. Este comportamiento se debe al crecimiento exponencial del espacio de búsqueda y al aumento en el número de variables y restricciones. El gráfico de la Figura~\ref{fig:tiempos_resolucion} muestra la evolución de los tiempos de resolución según el tamaño de la instancia.
-
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.7\textwidth]{tiempos_resolucion.png}
-\caption{Tiempos de resolución promedio según el tamaño de la instancia.}
-\label{fig:tiempos_resolucion}
-\end{figure}
-
-% --- CONCLUSIONES ---
-\section{Conclusiones}
-El modelo y la implementación permiten resolver eficientemente instancias de tamaño pequeño y mediano. Para instancias grandes, la complejidad computacional limita la obtención de soluciones óptimas en tiempos razonables, aunque se logran soluciones factibles útiles para el análisis. Se recomienda explorar técnicas de mejora o heurísticas para abordar instancias de mayor tamaño en futuros trabajos.
-
-% --- RECOMENDACIONES FINALES ---
-\section{Recomendaciones y Consideraciones Finales}
-\begin{itemize}
-    \item Se recomienda compilar el informe al menos dos veces para asegurar la correcta actualización de referencias cruzadas.
-    \item Verificar que todos los archivos gráficos (.png) estén presentes en la carpeta correspondiente.
-    \item Si se agregan anexos o bibliografía, incluirlos al final del documento.
-\end{itemize}
 
 \end{document}

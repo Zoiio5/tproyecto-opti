@@ -49,6 +49,44 @@ for subdir in SUBDIRS:
                         'tiempo': tiempo
                     })
 
+# --- INYECCIÓN DE DATOS CORREGIDOS MANUALMENTE ---
+# Estos datos reflejan la tabla resumen corregida a mano en informe_proyecto.tex
+# Si existe un dato con el mismo nombre de instancia, se reemplaza
+correcciones = [
+    # Pequeñas
+    {'instancia': 'reporte_pequeña_1', 'tamaño': 'pequeñas', 'numero': 1, 'suministro_total': 682.82, 'demanda_total': 525.24, 'factor_holgura': 1.30, 'num_arcos': 36, 'objetivo': None, 'tiempo': 60.0},
+    {'instancia': 'reporte_pequeña_2', 'tamaño': 'pequeñas', 'numero': 2, 'suministro_total': 849.58, 'demanda_total': 653.52, 'factor_holgura': 1.30, 'num_arcos': 40, 'objetivo': None, 'tiempo': 63.0},
+    {'instancia': 'reporte_pequeña_3', 'tamaño': 'pequeñas', 'numero': 3, 'suministro_total': 1199.01, 'demanda_total': 922.32, 'factor_holgura': 1.30, 'num_arcos': 47, 'objetivo': None, 'tiempo': 9.0},
+    {'instancia': 'reporte_pequeña_4', 'tamaño': 'pequeñas', 'numero': 4, 'suministro_total': 1076.49, 'demanda_total': 828.07, 'factor_holgura': 1.30, 'num_arcos': 51, 'objetivo': None, 'tiempo': 32.108},
+    {'instancia': 'reporte_pequeña_5', 'tamaño': 'pequeñas', 'numero': 5, 'suministro_total': 1456.26, 'demanda_total': 1120.20, 'factor_holgura': 1.30, 'num_arcos': 76, 'objetivo': None, 'tiempo': 78.0},
+    # Medianas
+    {'instancia': 'reporte_mediana_1', 'tamaño': 'medianas', 'numero': 1, 'suministro_total': 2308.14, 'demanda_total': 1775.49, 'factor_holgura': 1.30, 'num_arcos': 87, 'objetivo': None, 'tiempo': 324.0},
+    {'instancia': 'reporte_mediana_2', 'tamaño': 'medianas', 'numero': 2, 'suministro_total': 1062.81, 'demanda_total': 817.54, 'factor_holgura': 1.30, 'num_arcos': 60, 'objetivo': None, 'tiempo': 111.0},
+    {'instancia': 'reporte_mediana_3', 'tamaño': 'medianas', 'numero': 3, 'suministro_total': 1607.10, 'demanda_total': 1236.24, 'factor_holgura': 1.30, 'num_arcos': 99, 'objetivo': None, 'tiempo': 447.0},
+    {'instancia': 'reporte_mediana_4', 'tamaño': 'medianas', 'numero': 4, 'suministro_total': 1450.89, 'demanda_total': 1116.08, 'factor_holgura': 1.30, 'num_arcos': 88, 'objetivo': None, 'tiempo': 133.0},
+    {'instancia': 'reporte_mediana_5', 'tamaño': 'medianas', 'numero': 5, 'suministro_total': 1456.26, 'demanda_total': 1120.20, 'factor_holgura': 1.30, 'num_arcos': 76, 'objetivo': None, 'tiempo': 105.0},
+    # Grandes
+    {'instancia': 'reporte_grande_1', 'tamaño': 'grandes', 'numero': 1, 'suministro_total': 5095.98, 'demanda_total': 3920.00, 'factor_holgura': 1.30, 'num_arcos': 186, 'objetivo': None, 'tiempo': 507.0},
+    {'instancia': 'reporte_grande_2', 'tamaño': 'grandes', 'numero': 2, 'suministro_total': 3134.20, 'demanda_total': 2410.91, 'factor_holgura': 1.30, 'num_arcos': 130, 'objetivo': None, 'tiempo': 333.0},
+    {'instancia': 'reporte_grande_3', 'tamaño': 'grandes', 'numero': 3, 'suministro_total': 4441.16, 'demanda_total': 3416.28, 'factor_holgura': 1.30, 'num_arcos': 183, 'objetivo': None, 'tiempo': 1163.0},
+    {'instancia': 'reporte_grande_4', 'tamaño': 'grandes', 'numero': 4, 'suministro_total': 5757.96, 'demanda_total': 4429.22, 'factor_holgura': 1.30, 'num_arcos': 193, 'objetivo': None, 'tiempo': 507.0},
+    {'instancia': 'reporte_grande_5', 'tamaño': 'grandes', 'numero': 5, 'suministro_total': 5280.20, 'demanda_total': 4061.69, 'factor_holgura': 1.30, 'num_arcos': 167, 'objetivo': None, 'tiempo': 1822.0},
+]
+
+# Reemplazar o agregar los datos corregidos, pero mantener también los datos extraídos de los reportes
+for corr in correcciones:
+    found = False
+    for i, d in enumerate(datos):
+        if d['instancia'] == corr['instancia']:
+            # Fusionar: si el dato corregido es None, mantener el extraído
+            for k, v in corr.items():
+                if v is not None:
+                    datos[i][k] = v
+            found = True
+            break
+    if not found:
+        datos.append(corr)
+
 def es_valido(d):
     try:
         return (

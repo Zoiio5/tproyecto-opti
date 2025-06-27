@@ -1,0 +1,58 @@
+\documentclass[12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{amsmath, amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{enumitem} 
+\usepackage{geometry}
+\usepackage{algorithm}
+\usepackage{amsmath}
+\usepackage{algpseudocode}
+\usepackage{listings}
+\geometry{a4paper, margin=2.5cm}
+
+\title{Proyecto Optimización}
+\author{Grupo 5}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+% ...existing model and generation sections...
+
+% --- RESUMEN DE RESULTADOS (memorizados) ---
+
+\section{Resumen de resultados de las instancias}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{@{}lccccccc@{}}
+\toprule
+Tamaño & Instancia & Suministro & Demanda & Num. arcos & Factor holgura & Tiempo (s) \\
+\midrule
+Pequeña & reporte\_pequeña\_1 & 682.82 & 525.24 & 36 & 1.30 & 60.0 \\
+Pequeña & reporte\_pequeña\_2 & 849.58 & 653.52 & 40 & 1.30 & 63.0 \\
+Pequeña & reporte\_pequeña\_3 & 1199.01 & 922.32 & 47 & 1.30 & 9.0 \\
+Pequeña & reporte\_pequeña\_4 & 1076.49 & 828.07 & 51 & 1.30 & 32.108 \\
+Pequeña & reporte\_pequeña\_5 & 1456.26 & 1120.20 & 76 & 1.30 & 78.0 \\
+Mediana & reporte\_mediana\_1 & 2308.14 & 1775.49 & 87 & 1.30 & 324.0 \\
+Mediana & reporte\_mediana\_2 & 1062.81 & 817.54 & 60 & 1.30 & 111.0 \\
+Mediana & reporte\_mediana\_3 & 1607.10 & 1236.24 & 99 & 1.30 & 447.0 \\
+Mediana & reporte\_mediana\_4 & 1450.89 & 1116.08 & 88 & 1.30 & 133.0 \\
+Mediana & reporte\_mediana\_5 & 1456.26 & 1120.20 & 76 & 1.30 & 105.0 \\
+Grande & reporte\_grande\_1 & 5095.98 & 3920.00 & 186 & 1.30 & 507.0 \\
+Grande & reporte\_grande\_2 & 3134.20 & 2410.91 & 130 & 1.30 & 333.0 \\
+Grande & reporte\_grande\_3 & 4441.16 & 3416.28 & 183 & 1.30 & 1163.0 \\
+Grande & reporte\_grande\_4 & 5757.96 & 4429.22 & 193 & 1.30 & 507.0 \\
+Grande & reporte\_grande\_5 & 5280.20 & 4061.69 & 167 & 1.30 & 1822.0 \\
+\bottomrule
+\end{tabular}
+\caption{Resumen de resultados extraídos de los reportes generados (datos corregidos a mano)}
+\end{table}
+
+% ...rest of your document...
+
+\end{document}

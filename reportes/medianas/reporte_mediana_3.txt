@@ -17,5 +17,5 @@ COSTOS:
   Costo Transporte:  $305602.90
   Penalización:      $896620.00
   COSTO TOTAL: $1202682.90
-Tiempo de resolución: 7.45
+Tiempo de resolución: 7:27.000
 
