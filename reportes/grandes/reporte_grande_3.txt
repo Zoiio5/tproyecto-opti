@@ -13,9 +13,9 @@ CONECTIVIDAD:
   Transbordo -> Finales: 94 conexiones
 
 COSTOS:
-  Costo Instalación: $470.00
-  Costo Transporte:  $312000.00
-  Penalización:      $2500000.00
-  COSTO TOTAL:       $2812470.00
+  Costo Instalación: $540.00
+  Costo Transporte:  $363960.31
+  Penalización:      $3003000.00
+  COSTO TOTAL:       $3367500.31
 Tiempo de resolución: 19:38.000
 

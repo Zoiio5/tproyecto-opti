@@ -16,6 +16,6 @@ COSTOS:
   Costo Instalación: $270.00
   Costo Transporte:  $129422.30
   Penalización:      $1620010.00
-  COSTO TOTAL: $1749702.30
+  COSTO TOTAL:       $1749702.30
 Tiempo de resolución: 5:24.000
 
