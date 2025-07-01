@@ -33,36 +33,36 @@ class GeneradorInstanciasGrupo5:
 
     def generar_costos_transporte(self, m):
         """Genera costos de transporte más razonables"""
-        return [round(max(1.0, np.random.normal(6, 1.5)), 2) for _ in range(m)]
+        return [round(max(1.0, np.random.normal(8, 2)), 2) for _ in range(m)]
 
     def generar_topologia_conectada(self, nP, nT, nC1, nC2):
         """Genera una topología que garantiza conectividad completa"""
         pt = []
-        # Conectar cada planta con al menos un tanque
+
         for p in range(nP):
             pt.append((f"P{p}", f"T{random.randint(0, nT-1)}"))
         
-        # Conectar cada tanque con al menos una planta
+ 
         for t in range(nT):
             if not any(conn[1] == f"T{t}" for conn in pt):
                 pt.append((f"P{random.randint(0, nP-1)}", f"T{t}"))
         
         tc1 = []
-        # Conectar cada tanque con al menos un centro de transbordo
+
         for t in range(nT):
             tc1.append((f"T{t}", f"C1_{random.randint(0, nC1-1)}"))
         
-        # Conectar cada centro de transbordo con al menos un tanque
+
         for c in range(nC1):
             if not any(conn[1] == f"C1_{c}" for conn in tc1):
                 tc1.append((f"T{random.randint(0, nT-1)}", f"C1_{c}"))
         
         c1c2 = []
-        # Conectar cada centro de transbordo con al menos un centro final
+
         for c in range(nC1):
             c1c2.append((f"C1_{c}", f"C2_{random.randint(0, nC2-1)}"))
         
-        # Conectar cada centro final con al menos un centro de transbordo
+
         for f in range(nC2):
             if not any(conn[1] == f"C2_{f}" for conn in c1c2):
                 c1c2.append((f"C1_{random.randint(0, nC1-1)}", f"C2_{f}"))
@@ -259,11 +259,10 @@ if __name__=='__main__':
         for i in range(1,6):
             inst = gen.generar_instancia(tam,i)
             
-            # Guardar archivo DZN
             ruta_dzn = os.path.join(carpeta, f"inst_{tam[:-1]}_{i}.dzn")
             gen.guardar_dzn(inst, ruta_dzn)
             
-            # Generar reporte de instancia
+
             ruta_reporte = os.path.join(carpeta_reportes, f"reporte_{tam[:-1]}_{i}.txt")
             gen.generar_reporte_instancia(inst, ruta_reporte)
             
