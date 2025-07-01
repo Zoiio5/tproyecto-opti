@@ -47,7 +47,7 @@ demand = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
          27.0, 31.0, 29.0, 32.0, 34.0, 25.0, 35.0, 33.0, 30.0, 32.0, 31.24]; % C2: 369.24 total
 
 % 4. Capacidades generosas
-max_capacity = [1000, 2000, 4000];
+max_capacity = [795, 1414, 3181];
 
 % 5. Costos de instalación - SINTAXIS CORREGIDA para MiniZinc
 install_cost = [|

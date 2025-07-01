@@ -1,21 +1,14 @@
 === REPORTE DE INSTANCIA ===
 
-Metadata: {'tamaño': 'grandes', 'numero': 1, 'grupo': 5, 'demanda_total': 3920.0, 'suministro_total': 5095.98, 'factor_holgura': 1.3, 'num_arcos': 186, 'conectividad': {'plantas_tanques': 40, 'tanques_transbordo': 49, 'transbordo_finales': 97}}
+Metadata: {'tamaño': 'grandes', 'numero': 1, 'grupo': 5, 'demanda_total': 1936.43, 'suministro_total': 2517.35, 'factor_holgura': 1.3, 'num_arcos': 103, 'conectividad': {'plantas_tanques': 26, 'tanques_transbordo': 33, 'transbordo_finales': 44}}
 
 BALANCE OFERTA-DEMANDA:
-  Suministro total: 5095.98
-  Demanda total: 3920.00
+  Suministro total: 2517.35
+  Demanda total: 1936.43
   Factor de holgura: 1.30
 
 CONECTIVIDAD:
-  Plantas -> Tanques: 40 conexiones
-  Tanques -> Transbordo: 49 conexiones
-  Transbordo -> Finales: 97 conexiones
-
-COSTOS:
-  Costo Instalación: $780.00
-  Costo Transporte:  $468355.17
-  Penalización:      $3376120.00
-  COSTO TOTAL:       $3845255.17
-Tiempo de resolución: 1:51:26.000
+  Plantas -> Tanques: 26 conexiones
+  Tanques -> Transbordo: 33 conexiones
+  Transbordo -> Finales: 44 conexiones
 

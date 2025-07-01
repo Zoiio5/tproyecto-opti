@@ -38,41 +38,34 @@ class GeneradorInstanciasGrupo5:
     def generar_topologia_conectada(self, nP, nT, nC1, nC2):
         """Genera una topología que garantiza conectividad completa"""
         pt = []
-        plantas_disponibles = list(range(nP))
-        for t in range(nT):
-           
-            num_conexiones = min(random.randint(1, 2), nP)
-            plantas_conectadas = random.sample(plantas_disponibles, num_conexiones)
-            for p in plantas_conectadas:
-                pt.append((f"P{p}", f"T{t}"))
-        
-        
+        # Conectar cada planta con al menos un tanque
         for p in range(nP):
-            if not any(conn[0] == f"P{p}" for conn in pt):
-                
-                t_random = random.randint(0, nT-1)
-                pt.append((f"P{p}", f"T{t_random}"))
-
+            pt.append((f"P{p}", f"T{random.randint(0, nT-1)}"))
+        
+        # Conectar cada tanque con al menos una planta
+        for t in range(nT):
+            if not any(conn[1] == f"T{t}" for conn in pt):
+                pt.append((f"P{random.randint(0, nP-1)}", f"T{t}"))
         
         tc1 = []
+        # Conectar cada tanque con al menos un centro de transbordo
         for t in range(nT):
-            
-            num_conexiones = min(random.randint(1, 3), nC1)
-            centros_conectados = random.sample(range(nC1), num_conexiones)
-            for c in centros_conectados:
-                tc1.append((f"T{t}", f"C1_{c}"))
-        c1c2 = []
-        for f in range(nC2):
-            if nC1 > 0:
-                c_random = random.randint(0, nC1-1)
-                c1c2.append((f"C1_{c_random}", f"C2_{f}"))
+            tc1.append((f"T{t}", f"C1_{random.randint(0, nC1-1)}"))
         
+        # Conectar cada centro de transbordo con al menos un tanque
         for c in range(nC1):
-            num_conexiones = min(random.randint(1, 2), nC2)
-            destinos_adicionales = random.sample(range(nC2), num_conexiones)
-            for f in destinos_adicionales:
-                if (f"C1_{c}", f"C2_{f}") not in c1c2:
-                    c1c2.append((f"C1_{c}", f"C2_{f}"))
+            if not any(conn[1] == f"C1_{c}" for conn in tc1):
+                tc1.append((f"T{random.randint(0, nT-1)}", f"C1_{c}"))
+        
+        c1c2 = []
+        # Conectar cada centro de transbordo con al menos un centro final
+        for c in range(nC1):
+            c1c2.append((f"C1_{c}", f"C2_{random.randint(0, nC2-1)}"))
+        
+        # Conectar cada centro final con al menos un centro de transbordo
+        for f in range(nC2):
+            if not any(conn[1] == f"C2_{f}" for conn in c1c2):
+                c1c2.append((f"C1_{random.randint(0, nC1-1)}", f"C2_{f}"))
 
         return pt, tc1, c1c2
 
@@ -266,19 +259,19 @@ if __name__=='__main__':
         for i in range(1,6):
             inst = gen.generar_instancia(tam,i)
             
-
-            ruta_dzn = os.path.join(carpeta,f"inst_{tam[:-1]}_{i}.dzn")
-
-            ruta_reporte = os.path.join(carpeta_reportes,f"reporte_{tam[:-1]}_{i}.txt")
+            # Guardar archivo DZN
+            ruta_dzn = os.path.join(carpeta, f"inst_{tam[:-1]}_{i}.dzn")
+            gen.guardar_dzn(inst, ruta_dzn)
+            
+            # Generar reporte de instancia
+            ruta_reporte = os.path.join(carpeta_reportes, f"reporte_{tam[:-1]}_{i}.txt")
             gen.generar_reporte_instancia(inst, ruta_reporte)
             
-
             metadata = inst['metadata']
             print(f"  Instancia {i}: Factor holgura = {metadata['factor_holgura']:.2f}, "
                   f"Arcos = {metadata['num_arcos']}, "
                   f"Demanda = {metadata['demanda_total']:.2f}")
-            
-            print(f"  Guardado: {ruta_dzn}")
+            print(f"  Guardado DZN: {ruta_dzn}")
             print(f"  Reporte: {ruta_reporte}")
     
     print(f"\n¡Generación completada! Todas las instancias tienen factores de holgura >= 1.3 para mejor satisfacibilidad.")

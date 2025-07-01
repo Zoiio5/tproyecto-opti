@@ -31,7 +31,7 @@ array[1..N] of float: demand;
 % 4. Diámetros disponibles (desde archivo .dzn)
 int: nD;                                          
 array[1..nD] of int: diam_mm = [75,100,150];       
-array[1..nD] of int: max_capacity;  % Viene del archivo .dzn
+array[1..nD] of int: max_capacity;  
 array[1..nD] of int: capacity_c = [ max_capacity[d]*SCALE | d in 1..nD ];
 
 % 5. Costos de instalación y transporte (desde archivo .dzn, se escalan)
@@ -45,13 +45,13 @@ array[1..nA] of int: trans_cost_c =
     [ round(trans_cost[a]*SCALE) | a in 1..nA ];
 
 % 6. Parámetros adicionales para reportes (con valores por defecto)
-string: instance_size = "pequena";  % "pequeñas", "medianas", "grandes"
-int: instance_number = 1;           % número de instancia
+string: instance_size = "pequena";  
+int: instance_number = 1;          
 int: grupo = 5;
 
 % 7. Variables de decisión (enteras/booleanas)
-array[1..nA,1..nD] of var bool: y;      % diámetro instalado
-array[1..nA] of var 0..1000000: f_c;    % flujo escalado en centilitros/min
+array[1..nA,1..nD] of var bool: y;      
+array[1..nA] of var 0..1000000: f_c;    
 array[1..nA] of var bool: active;       
 
 % Variables auxiliares para nodos sin conexión
@@ -63,7 +63,7 @@ constraint forall(a in 1..nA) (
 );
 
 constraint forall(a in 1..nA) (
-    sum(d in 1..nD)(bool2int(y[a,d])) <= 1  % Máximo un diámetro por arco
+    sum(d in 1..nD)(bool2int(y[a,d])) <= 1  
 );
 
 constraint forall(a in 1..nA) (
@@ -106,7 +106,7 @@ var int: total_transport_cost_c =
     sum(a in 1..nA)( trans_cost_c[a] * f_c[a] );
 
 var int: penalty_unmet_demand_c = 
-    sum(i in C1 union C2)(unmet_demand_c[i] * 1000);  % Penalización alta
+    sum(i in C1 union C2)(unmet_demand_c[i] * 1000);
 
 var int: total_cost_c = total_install_cost_c + total_transport_cost_c + penalty_unmet_demand_c;
 
